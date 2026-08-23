@@ -3,11 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Game;
-use App\Events\PlayerJoined;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
-
-
 
 class RoomController extends Controller
 {
@@ -20,15 +18,15 @@ class RoomController extends Controller
             'status' => 'lobby',
         ]);
 
-        $game->players()->create([
+        $newPlayer = $game->players()->create([
             'guest_name' => $request->input('guest_name'),
             'session_id' => session()->getId(),
         ]);
-        
+
+        Auth::guard('players')->login($newPlayer);
         session(['guest_name' => $request->input('guest_name')]);
 
         return redirect()->route('rooms.show', ['code' => $roomCode]);
-
     }
 
     public function join(Request $request)
@@ -42,9 +40,8 @@ class RoomController extends Controller
             'session_id' => session()->getId(),
         ]);
 
+        Auth::guard('players')->login($newPlayer);
         session(['guest_name' => $request->input('guest_name')]);
-
-        event(new PlayerJoined($newPlayer));
 
         return redirect()->route('rooms.show', ['code' => $game->room_code]);
     }

@@ -2,9 +2,10 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
+use Illuminate\Foundation\Auth\User as Authenticatable;
 
-class GamePlayer extends Model
+
+class GamePlayer extends Authenticatable
 {
     protected $fillable = [
         'game_id',
@@ -13,7 +14,9 @@ class GamePlayer extends Model
         'final_score',
         'turns_taken',
     ];
-    public function game(){
+
+    public function game()
+    {
         return $this->belongsTo(Game::class);
     }
 }
