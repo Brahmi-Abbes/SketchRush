@@ -1,5 +1,4 @@
 import Echo from 'laravel-echo';
-
 import Pusher from 'pusher-js';
 window.Pusher = Pusher;
 
@@ -11,4 +10,9 @@ window.Echo = new Echo({
     wssPort: import.meta.env.VITE_REVERB_PORT ?? 443,
     forceTLS: (import.meta.env.VITE_REVERB_SCHEME ?? 'https') === 'https',
     enabledTransports: ['ws', 'wss'],
+    auth: {
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+        },
+    },
 });

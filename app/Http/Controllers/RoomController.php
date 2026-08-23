@@ -24,6 +24,8 @@ class RoomController extends Controller
             'guest_name' => $request->input('guest_name'),
             'session_id' => session()->getId(),
         ]);
+        
+        session(['guest_name' => $request->input('guest_name')]);
 
         return redirect()->route('rooms.show', ['code' => $roomCode]);
 
@@ -39,6 +41,8 @@ class RoomController extends Controller
             'guest_name' => $request->input('guest_name'),
             'session_id' => session()->getId(),
         ]);
+
+        session(['guest_name' => $request->input('guest_name')]);
 
         event(new PlayerJoined($newPlayer));
 
