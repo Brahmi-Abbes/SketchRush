@@ -22,8 +22,7 @@
                 </ul>
             </div>
 
-            @if($game->host_session_id === session()->getId())
-                <button id="start-btn"
+            @if((string) $game->host_session_id === (string) auth('players')->id())                <button id="start-btn"
                         disabled
                         class="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-600 disabled:cursor-not-allowed py-2 rounded font-semibold">
                     Start Game
