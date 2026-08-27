@@ -6,6 +6,8 @@ use App\Models\Game;
 use App\Services\GameStateService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redis;
+use App\Events\StrokeDrawn;
+use App\Events\CanvasCleared;
 
 class GameController extends Controller
 {
@@ -13,11 +15,15 @@ class GameController extends Controller
     {
         $game = Game::where('room_code', $code)->with('players')->firstOrFail();
 
+        $player = auth('players')->user();
+        if (! $player) {
+            return redirect()->route('home');
+        }
+
         if (! Redis::exists("game:{$game->room_code}:turn_order")) {
             $stateService->startGame($game);
         }
 
-        $player = auth('players')->user();
         $isDrawer = (string) Redis::get("game:{$game->room_code}:current_drawer_id") === (string) $player->id;
 
         $pendingChoices = null;
@@ -36,6 +42,44 @@ class GameController extends Controller
     {
         $game = Game::where('room_code', $code)->firstOrFail();
         $stateService->selectWord($game, auth('players')->user(), $request->input('word'));
+
+        return response()->noContent();
+    }
+
+    public function draw(Request $request, string $code)
+    {
+        $game = Game::where('room_code', $code)->firstOrFail();
+        $player = auth('players')->user();
+
+        $player = auth('players')->user();
+        abort_unless($player, 403);
+
+        $drawerId = Redis::get("game:{$game->room_code}:current_drawer_id");
+        abort_unless((string) $drawerId === (string) $player->id, 403);
+
+        event(new StrokeDrawn(
+            $game->room_code,
+            $request->input('points'),
+            $request->input('color', '#000000'),
+            (int) $request->input('width', 3),
+            (int) $request->input('generation', 0)
+        ));
+
+        return response()->noContent();
+    }
+
+    public function clearCanvas(Request $request, string $code)
+    {
+        $game = Game::where('room_code', $code)->firstOrFail();
+        $player = auth('players')->user();
+
+        $player = auth('players')->user();
+        abort_unless($player, 403);
+
+        $drawerId = Redis::get("game:{$game->room_code}:current_drawer_id");
+        abort_unless((string) $drawerId === (string) $player->id, 403);
+
+        event(new CanvasCleared($game->room_code));
 
         return response()->noContent();
     }

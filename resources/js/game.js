@@ -1,4 +1,5 @@
 import './echo';
+import { initCanvas } from './canvas';
 
 const appEl = document.getElementById('game-app');
 const roomCode = appEl.dataset.roomCode;
@@ -30,8 +31,21 @@ document.querySelectorAll('.word-choice-btn').forEach((btn) => {
     });
 });
 
-// Private channel — only fires for whoever is actually the current drawer
+// Canvas setup
+const canvasEl = document.getElementById('drawing-canvas');
+const canvasApi = initCanvas({
+    canvas: canvasEl,
+    isDrawer,
+    roomCode,
+    csrfToken,
+});
+
 if (isDrawer) {
-    // Already-rendered choices come from Blade on page load;
-    // this listener catches choices for FUTURE turns without a refresh.
+    document.getElementById('drawer-controls').classList.remove('hidden');
+    document.getElementById('clear-canvas-btn').addEventListener('click', () => {
+        fetch(`/rooms/${roomCode}/clear-canvas`, {
+            method: 'POST',
+            headers: { 'X-CSRF-TOKEN': csrfToken },
+        });
+    });
 }
