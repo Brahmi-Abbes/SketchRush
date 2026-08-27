@@ -51,7 +51,7 @@ class GameController extends Controller
         $game = Game::where('room_code', $code)->firstOrFail();
         $player = auth('players')->user();
 
-        $player = auth('players')->user();
+        
         abort_unless($player, 403);
 
         $drawerId = Redis::get("game:{$game->room_code}:current_drawer_id");
@@ -73,7 +73,7 @@ class GameController extends Controller
         $game = Game::where('room_code', $code)->firstOrFail();
         $player = auth('players')->user();
 
-        $player = auth('players')->user();
+        
         abort_unless($player, 403);
 
         $drawerId = Redis::get("game:{$game->room_code}:current_drawer_id");

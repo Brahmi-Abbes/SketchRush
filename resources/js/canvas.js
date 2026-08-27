@@ -88,6 +88,7 @@ export function initCanvas({ canvas, isDrawer, roomCode, csrfToken }) {
 
     window.Echo.channel('room.' + roomCode)
         .listen('StrokeDrawn', (e) => {
+            if (isDrawer) return;
             if (e.generation !== generation) return;
             for (let i = 0; i < e.points.length - 1; i++) {
                 drawSegment(e.points[i], e.points[i + 1], e.color, e.width);
