@@ -7,7 +7,7 @@ export function initCanvas({ canvas, isDrawer, roomCode, csrfToken }) {
     let currentStroke = [];
     let lastSendTime = 0;
     let generation = 0;
-    const SEND_INTERVAL_MS = 50;
+    const SEND_INTERVAL_MS = 150;
 
     function getPos(e) {
         const rect = canvas.getBoundingClientRect();
