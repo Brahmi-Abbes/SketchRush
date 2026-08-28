@@ -11,6 +11,7 @@ Route::get('/rooms/{code}/play', [GameController::class, 'show'])->name('rooms.p
 Route::post('/rooms/{code}/select-word', [GameController::class, 'selectWord'])->name('rooms.select-word');
 Route::post('/rooms/{code}/draw', [GameController::class, 'draw'])->name('rooms.draw');
 Route::post('/rooms/{code}/clear-canvas', [GameController::class, 'clearCanvas'])->name('rooms.clear-canvas');
+Route::post('/rooms/{code}/guess', [GameController::class, 'guess'])->name('rooms.guess');
 Route::get('/rooms/{code}', function ($code) {
     $game = \App\Models\Game::where('room_code', $code)->with('players')->firstOrFail();
     return view('lobby', ['game' => $game]);

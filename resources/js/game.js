@@ -15,7 +15,41 @@ window.Echo.channel('room.' + roomCode)
     .listen('RoundStarted', (e) => {
         statusText.textContent = e.drawerName + ' is drawing!';
         document.getElementById('word-choices')?.remove();
+    })
+    .listen('GuessSubmitted', (e) => {
+        appendMessage(`${e.playerName}: ${e.guess}`);
+    })
+    .listen('PlayerGuessedCorrectly', (e) => {
+        appendMessage(`${e.playerName} guessed the word!`, 'text-green-400 font-bold');
     });
+
+function appendMessage(text, className = '') {
+    const chatLog = document.getElementById('chat-log');
+    const el = document.createElement('div');
+    el.textContent = text;
+    if (className) el.className = className;
+    chatLog.appendChild(el);
+    chatLog.scrollTop = chatLog.scrollHeight;
+}
+
+const guessForm = document.getElementById('guess-form');
+if (guessForm) {
+    guessForm.addEventListener('submit', (ev) => {
+        ev.preventDefault();
+        const input = document.getElementById('guess-input');
+        const guess = input.value.trim();
+        if (!guess) return;
+        fetch(`/rooms/${roomCode}/guess`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': csrfToken,
+            },
+            body: JSON.stringify({ guess }),
+        });
+        input.value = '';
+    });
+}
 
 // Word choice buttons (only exist in the DOM if this player is the drawer)
 document.querySelectorAll('.word-choice-btn').forEach((btn) => {

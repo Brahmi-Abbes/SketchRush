@@ -23,6 +23,16 @@
 
         <canvas id="drawing-canvas" width="600" height="400"
                 class="bg-white rounded w-full touch-none"></canvas>
+        
+        <div id="chat-log" class="bg-gray-900 rounded p-3 h-40 overflow-y-auto space-y-1 text-sm"></div>
+
+        @if(!$isDrawer)
+            <form id="guess-form" class="flex gap-2">
+                <input id="guess-input" type="text" autocomplete="off" placeholder="Type your guess..."
+                    class="flex-1 bg-gray-700 rounded px-3 py-2 text-sm" />
+                <button type="submit" class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded text-sm">Guess</button>
+            </form>
+        @endif
 
         <div id="drawer-controls" class="hidden">
             <button id="clear-canvas-btn" class="bg-red-600 hover:bg-red-700 px-4 py-2 rounded text-sm">

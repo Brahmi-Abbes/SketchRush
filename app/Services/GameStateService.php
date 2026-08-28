@@ -43,6 +43,7 @@ class GameStateService
         Redis::set("game:{$game->room_code}:pending_choices", json_encode($choices));
         Redis::set("game:{$game->room_code}:current_drawer_id", $drawerId);
         Redis::del("game:{$game->room_code}:current_word");
+        Redis::del("game:{$game->room_code}:correct_guessers");
 
         event(new WordChoicesOffered($drawer, $choices));
         event(new TurnAwaitingWord($game->room_code, $drawer->guest_name));

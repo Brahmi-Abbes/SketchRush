@@ -8,6 +8,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redis;
 use App\Events\StrokeDrawn;
 use App\Events\CanvasCleared;
+use App\Events\GuessSubmitted;
+use App\Events\PlayerGuessedCorrectly;
 
 class GameController extends Controller
 {
@@ -80,6 +82,35 @@ class GameController extends Controller
         abort_unless((string) $drawerId === (string) $player->id, 403);
 
         event(new CanvasCleared($game->room_code));
+
+        return response()->noContent();
+    }
+    
+    public function guess(Request $request, string $code)
+    {
+        $game = Game::where('room_code', $code)->firstOrFail();
+        $player = auth('players')->user();
+        abort_unless($player, 403);
+
+        $drawerId = Redis::get("game:{$game->room_code}:current_drawer_id");
+        abort_if((string) $drawerId === (string) $player->id, 403, 'The drawer cannot guess');
+
+        $word = Redis::get("game:{$game->room_code}:current_word");
+        abort_unless($word, 409, 'No word is being drawn right now');
+
+        $guess = trim((string) $request->input('guess', ''));
+        abort_if($guess === '', 422);
+
+        if (Redis::sismember("game:{$game->room_code}:correct_guessers", $player->id)) {
+            return response()->noContent(); // already solved it this round, ignore
+        }
+
+        if (strcasecmp($guess, $word) === 0) {
+            Redis::sadd("game:{$game->room_code}:correct_guessers", $player->id);
+            event(new PlayerGuessedCorrectly($game->room_code, $player->guest_name));
+        } else {
+            event(new GuessSubmitted($game->room_code, $player->guest_name, $guess));
+        }
 
         return response()->noContent();
     }
