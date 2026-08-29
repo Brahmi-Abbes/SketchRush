@@ -107,6 +107,9 @@ class GameController extends Controller
 
         if (strcasecmp($guess, $word) === 0) {
             Redis::sadd("game:{$game->room_code}:correct_guessers", $player->id);
+
+            event(new PlayerGuessedCorrectly($game->room_code, $player->guest_name)); // <- moved up
+
             $totalGuessers = $game->players()->count() - 1;
             $correctCount = Redis::scard("game:{$game->room_code}:correct_guessers");
             if ($totalGuessers > 0 && $correctCount >= $totalGuessers) {
@@ -116,7 +119,6 @@ class GameController extends Controller
                     'all_guessed'
                 );
             }
-            event(new PlayerGuessedCorrectly($game->room_code, $player->guest_name));
         } else {
             event(new GuessSubmitted($game->room_code, $player->guest_name, $guess));
         }

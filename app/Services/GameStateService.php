@@ -75,8 +75,6 @@ class GameStateService
             'round_seconds' => self::ROUND_SECONDS,
         ]);
         EndRound::dispatch($game->room_code, $token)->delay(now()->addSeconds(self::ROUND_SECONDS));
-
-        EndRound::dispatch($game->room_code, $token)->delay(now()->addSeconds(self::ROUND_SECONDS));
         Redis::del("game:{$game->room_code}:pending_choices");
 
         event(new RoundStarted($game->room_code, $player->guest_name, $endsAt));    }
@@ -85,12 +83,12 @@ class GameStateService
         {
             $currentToken = (int) Redis::get("game:{$roomCode}:round_token");
             if ($token !== $currentToken) {
-                return; // stale — this round already ended or moved on
+                return;
             }
 
             $word = Redis::get("game:{$roomCode}:current_word");
             if (!$word) {
-                return; // nothing to end
+                return;
             }
 
             Redis::del("game:{$roomCode}:current_word");
@@ -98,5 +96,45 @@ class GameStateService
             Redis::del("game:{$roomCode}:round_ends_at");
 
             event(new RoundEnded($roomCode, $word, $reason));
+
+            $this->advanceTurn($roomCode);
+        }
+
+        private function advanceTurn(string $roomCode): void
+        {
+            $game = Game::where('room_code', $roomCode)->firstOrFail();
+            $order = json_decode(Redis::get("game:{$roomCode}:turn_order"), true);
+            $index = (int) Redis::get("game:{$roomCode}:turn_index");
+
+            $nextIndex = $index + 1;
+
+            if ($nextIndex >= count($order)) {
+                // everyone's had a turn this round — check if the game should end
+                $round = (int) Redis::get("game:{$roomCode}:round");
+                $roundsPerPlayer = $game->rounds_per_player;
+
+                if ($round >= $roundsPerPlayer) {
+                    $this->endGame($game);
+                    return;
+                }
+
+                // start a new round: reset index, bump round number
+                $nextIndex = 0;
+                Redis::incr("game:{$roomCode}:round");
+            }
+
+            Redis::set("game:{$roomCode}:turn_index", $nextIndex);
+
+            // small delay so players can read "the word was X" before the next turn starts
+            dispatch(function () use ($roomCode) {
+                $game = Game::where('room_code', $roomCode)->firstOrFail();
+                app(self::class)->startTurn($game);
+            })->delay(now()->addSeconds(4));
+        }
+
+        private function endGame(Game $game): void
+        {
+            $game->update(['status' => 'finished']);
+            event(new \App\Events\GameEnded($game->room_code));
         }
 }

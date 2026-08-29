@@ -25,6 +25,7 @@ window.Echo.channel('room.' + roomCode)
     .listen('RoundStarted', (e) => {
         statusText.textContent = e.drawerName + ' is drawing!';
         document.getElementById('word-choices')?.remove();
+        startCountdown(e.endsAt);
     })
     .listen('GuessSubmitted', (e) => {
         appendMessage(`${e.playerName}: ${e.guess}`);
@@ -32,16 +33,15 @@ window.Echo.channel('room.' + roomCode)
     .listen('PlayerGuessedCorrectly', (e) => {
         appendMessage(`${e.playerName} guessed the word!`, 'text-green-400 font-bold');
     })
-    .listen('RoundStarted', (e) => {
-        statusText.textContent = e.drawerName + ' is drawing!';
-        document.getElementById('word-choices')?.remove();
-        startCountdown(e.endsAt);
-    })
     .listen('RoundEnded', (e) => {
         clearInterval(timerInterval);
         document.getElementById('round-timer').textContent = '';
         const label = e.reason === 'all_guessed' ? 'Everyone guessed it!' : "Time's up!";
         appendMessage(`${label} The word was "${e.word}".`, 'text-yellow-400 font-bold');
+        setTimeout(() => window.location.reload(), 4500);
+    })
+    .listen('GameEnded', () => {
+        statusText.textContent = 'Game over!';
     });
 
 function appendMessage(text, className = '') {
