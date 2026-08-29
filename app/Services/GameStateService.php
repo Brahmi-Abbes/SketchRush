@@ -126,15 +126,37 @@ class GameStateService
             Redis::set("game:{$roomCode}:turn_index", $nextIndex);
 
             // small delay so players can read "the word was X" before the next turn starts
-            dispatch(function () use ($roomCode) {
-                $game = Game::where('room_code', $roomCode)->firstOrFail();
-                app(self::class)->startTurn($game);
-            })->delay(now()->addSeconds(4));
+            \App\Jobs\StartNextTurn::dispatch($roomCode)->delay(now()->addSeconds(4));
         }
 
         private function endGame(Game $game): void
         {
+            $scores = $this->getScores($game->room_code);
+
+            foreach ($game->players as $p) {
+                $p->update(['final_score' => $scores[$p->id] ?? 0]);
+            }
+
             $game->update(['status' => 'finished']);
             event(new \App\Events\GameEnded($game->room_code));
         }
-}
+
+        public function calculatePoints(string $roomCode): int
+        {
+            $endsAt = (int) Redis::get("game:{$roomCode}:round_ends_at");
+            $startedAt = $endsAt - self::ROUND_SECONDS;
+            $elapsed = max(0, now()->timestamp - $startedAt);
+
+            return max(10, 100 - $elapsed);
+        }
+
+        public function addScore(string $roomCode, int $playerId, int $points): void
+        {
+            Redis::hincrby("game:{$roomCode}:scores", $playerId, $points);
+        }
+
+        public function getScores(string $roomCode): array
+        {
+            return Redis::hgetall("game:{$roomCode}:scores");
+        }
+        }

@@ -13,11 +13,13 @@ class PlayerGuessedCorrectly implements ShouldBroadcast
 
     public string $roomCode;
     public string $playerName;
+    public int $points;
 
-    public function __construct(string $roomCode, string $playerName)
+    public function __construct(string $roomCode, string $playerName, int $points)
     {
         $this->roomCode = $roomCode;
         $this->playerName = $playerName;
+        $this->points = $points;
     }
 
     public function broadcastOn(): array

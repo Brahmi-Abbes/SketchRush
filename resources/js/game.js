@@ -42,6 +42,9 @@ window.Echo.channel('room.' + roomCode)
     })
     .listen('GameEnded', () => {
         statusText.textContent = 'Game over!';
+    })
+    .listen('PlayerGuessedCorrectly', (e) => {
+        appendMessage(`${e.playerName} guessed the word! (+${e.points})`, 'text-green-400 font-bold');
     });
 
 function appendMessage(text, className = '') {
