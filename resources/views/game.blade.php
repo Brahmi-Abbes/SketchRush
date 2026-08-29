@@ -1,4 +1,5 @@
 <x-layout title="Game — {{ $game->room_code }}">
+    <span id="round-timer" class="text-lg font-mono"></span>
     <div id="game-app"
          data-room-code="{{ $game->room_code }}"
          data-is-drawer="{{ $isDrawer ? '1' : '0' }}"

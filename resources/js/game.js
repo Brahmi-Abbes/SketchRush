@@ -6,7 +6,17 @@ const roomCode = appEl.dataset.roomCode;
 const isDrawer = appEl.dataset.isDrawer === '1';
 const statusText = document.getElementById('status-text');
 const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+let timerInterval = null;
 
+function startCountdown(endsAt) {
+    clearInterval(timerInterval);
+    const timerEl = document.getElementById('round-timer');
+    timerInterval = setInterval(() => {
+        const secondsLeft = Math.max(0, endsAt - Math.floor(Date.now() / 1000));
+        timerEl.textContent = secondsLeft + 's';
+        if (secondsLeft <= 0) clearInterval(timerInterval);
+    }, 250);
+}
 // Room-wide events — everyone hears these
 window.Echo.channel('room.' + roomCode)
     .listen('TurnAwaitingWord', (e) => {
@@ -21,6 +31,17 @@ window.Echo.channel('room.' + roomCode)
     })
     .listen('PlayerGuessedCorrectly', (e) => {
         appendMessage(`${e.playerName} guessed the word!`, 'text-green-400 font-bold');
+    })
+    .listen('RoundStarted', (e) => {
+        statusText.textContent = e.drawerName + ' is drawing!';
+        document.getElementById('word-choices')?.remove();
+        startCountdown(e.endsAt);
+    })
+    .listen('RoundEnded', (e) => {
+        clearInterval(timerInterval);
+        document.getElementById('round-timer').textContent = '';
+        const label = e.reason === 'all_guessed' ? 'Everyone guessed it!' : "Time's up!";
+        appendMessage(`${label} The word was "${e.word}".`, 'text-yellow-400 font-bold');
     });
 
 function appendMessage(text, className = '') {

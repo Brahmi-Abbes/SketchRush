@@ -3,14 +3,19 @@
 namespace App\Services;
 
 use App\Events\RoundStarted;
+use App\Events\RoundEnded;
 use App\Events\TurnAwaitingWord;
 use App\Events\WordChoicesOffered;
+use App\Jobs\EndRound;
 use App\Models\Game;
 use App\Models\GamePlayer;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redis;
 
 class GameStateService
 {
+    private const ROUND_SECONDS = 80;
+
     public function startGame(Game $game): void
     {
         $playerIds = $game->players()->pluck('id')->all();
@@ -43,6 +48,7 @@ class GameStateService
         Redis::set("game:{$game->room_code}:pending_choices", json_encode($choices));
         Redis::set("game:{$game->room_code}:current_drawer_id", $drawerId);
         Redis::del("game:{$game->room_code}:current_word");
+        Redis::incr("game:{$game->room_code}:round_token");
         Redis::del("game:{$game->room_code}:correct_guessers");
 
         event(new WordChoicesOffered($drawer, $choices));
@@ -59,8 +65,38 @@ class GameStateService
         abort_unless($valid, 422, 'Invalid word choice');
 
         Redis::set("game:{$game->room_code}:current_word", $word);
+        $endsAt = now()->addSeconds(self::ROUND_SECONDS)->timestamp;
+        Redis::set("game:{$game->room_code}:round_ends_at", $endsAt);
+        $token = (int) Redis::get("game:{$game->room_code}:round_token");
+
+        Log::info('Scheduling EndRound', [
+            'now' => now()->toDateTimeString(),
+            'runs_at' => now()->addSeconds(self::ROUND_SECONDS)->toDateTimeString(),
+            'round_seconds' => self::ROUND_SECONDS,
+        ]);
+        EndRound::dispatch($game->room_code, $token)->delay(now()->addSeconds(self::ROUND_SECONDS));
+
+        EndRound::dispatch($game->room_code, $token)->delay(now()->addSeconds(self::ROUND_SECONDS));
         Redis::del("game:{$game->room_code}:pending_choices");
 
-        event(new RoundStarted($game->room_code, $player->guest_name));
-    }
+        event(new RoundStarted($game->room_code, $player->guest_name, $endsAt));    }
+
+        public function endRound(string $roomCode, int $token, string $reason): void
+        {
+            $currentToken = (int) Redis::get("game:{$roomCode}:round_token");
+            if ($token !== $currentToken) {
+                return; // stale — this round already ended or moved on
+            }
+
+            $word = Redis::get("game:{$roomCode}:current_word");
+            if (!$word) {
+                return; // nothing to end
+            }
+
+            Redis::del("game:{$roomCode}:current_word");
+            Redis::del("game:{$roomCode}:current_drawer_id");
+            Redis::del("game:{$roomCode}:round_ends_at");
+
+            event(new RoundEnded($roomCode, $word, $reason));
+        }
 }

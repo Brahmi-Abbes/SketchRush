@@ -7,20 +7,21 @@ use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class RoundStarted implements ShouldBroadcast
+class RoundEnded implements ShouldBroadcast
 {
     use Dispatchable, SerializesModels;
 
     public string $roomCode;
-    public string $drawerName;
-    public int $endsAt;
+    public string $word;
+    public string $reason;
 
-    public function __construct(string $roomCode, string $drawerName, int $endsAt)
+    public function __construct(string $roomCode, string $word, string $reason)
     {
         $this->roomCode = $roomCode;
-        $this->drawerName = $drawerName;
-        $this->endsAt = $endsAt;
+        $this->word = $word;
+        $this->reason = $reason;
     }
+
     public function broadcastOn(): array
     {
         return [new Channel('room.' . $this->roomCode)];
