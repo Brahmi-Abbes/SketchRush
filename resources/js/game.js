@@ -59,7 +59,9 @@ if (guessForm) {
         ev.preventDefault();
         const input = document.getElementById('guess-input');
         const guess = input.value.trim();
-        if (!guess) return;
+        if (!guess || input.disabled) return;
+
+        input.disabled = true;
         fetch(`/rooms/${roomCode}/guess`, {
             method: 'POST',
             headers: {
@@ -67,8 +69,10 @@ if (guessForm) {
                 'X-CSRF-TOKEN': csrfToken,
             },
             body: JSON.stringify({ guess }),
+        }).finally(() => {
+            input.value = '';
+            input.disabled = false;
         });
-        input.value = '';
     });
 }
 
