@@ -30,9 +30,6 @@ window.Echo.channel('room.' + roomCode)
     .listen('GuessSubmitted', (e) => {
         appendMessage(`${e.playerName}: ${e.guess}`);
     })
-    .listen('PlayerGuessedCorrectly', (e) => {
-        appendMessage(`${e.playerName} guessed the word!`, 'text-green-400 font-bold');
-    })
     .listen('RoundEnded', (e) => {
         clearInterval(timerInterval);
         document.getElementById('round-timer').textContent = '';
