@@ -39,6 +39,7 @@ class GameController extends Controller
             'game' => $game,
             'isDrawer' => $isDrawer,
             'pendingChoices' => $pendingChoices,
+            'cluesRemaining' => 3 - $player->clues_used,
         ]);
     }
 
@@ -156,6 +157,8 @@ class GameController extends Controller
         $revealedLetters = min($player->clues_used, $maxRevealable);
         $hint = strtoupper(mb_substr($word, 0, $revealedLetters)) . str_repeat('_', $wordLength - $revealedLetters);
 
+        event(new ClueRevealed($player->id, $hint, 3 - $player->clues_used));
+        
         return response()->noContent();
     }
 }

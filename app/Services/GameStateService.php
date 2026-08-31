@@ -151,11 +151,21 @@ class GameStateService
             $elapsed = max(0, now()->timestamp - $startedAt);
             $points = max(10, 100 - $elapsed);
 
-            $cluesUsed = (int) Redis::get("game:{$roomCode}:clues_used:{$playerId}");
-            if ($cluesUsed > 0) {
+            $usedClueThisRound = Redis::sismember("game:{$roomCode}:clue_used_this_round:{$playerId}", $roomCode);
+            if ($usedClueThisRound) {
                 $points = min($points, 50);
             }
 
             return $points;
+        }
+
+        public function addScore(string $roomCode, int $playerId, int $points): void
+        {
+            Redis::hincrby("game:{$roomCode}:scores", $playerId, $points);
+        } 
+
+        public function getScores(string $roomCode): array
+        {
+            return Redis::hgetall("game:{$roomCode}:scores");
         }
 }

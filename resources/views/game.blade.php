@@ -33,9 +33,9 @@
                 <input id="guess-input" type="text" autocomplete="off" placeholder="Type your guess..."
                     class="flex-1 bg-gray-700 rounded px-3 py-2 text-sm" />
                 <button type="submit" class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded text-sm">Guess</button>
-                @if(!$isDrawer)
+                @if(!$isDrawer && $cluesRemaining > 0)
                     <button id="clue-btn" class="bg-purple-600 hover:bg-purple-700 px-3 py-2 rounded text-sm">
-                        Use Clue (<span id="clues-remaining">3</span> left)
+                        Use Clue (<span id="clues-remaining">{{ $cluesRemaining }}</span> left)
                     </button>
                 @endif
             </form>
