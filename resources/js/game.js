@@ -2,6 +2,7 @@ import './echo';
 import { initCanvas } from './canvas';
 
 const appEl = document.getElementById('game-app');
+const playerId = appEl.dataset.playerId;
 const roomCode = appEl.dataset.roomCode;
 const isDrawer = appEl.dataset.isDrawer === '1';
 const statusText = document.getElementById('status-text');
@@ -108,3 +109,16 @@ if (isDrawer) {
         });
     });
 }
+
+document.getElementById('clue-btn')?.addEventListener('click', () => {
+    fetch(`/rooms/${roomCode}/clue`, {
+        method: 'POST',
+        headers: { 'X-CSRF-TOKEN': csrfToken },
+    });
+});
+
+window.Echo.private('player.' + playerId)
+    .listen('ClueRevealed', (e) => {
+        appendMessage(`Clue: ${e.hint}`, 'text-purple-400 font-bold');
+        document.getElementById('clues-remaining').textContent = e.cluesRemaining;
+    });

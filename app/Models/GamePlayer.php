@@ -13,6 +13,7 @@ class GamePlayer extends Authenticatable
         'session_id',
         'final_score',
         'turns_taken',
+        'clues_used',
     ];
 
     public function game()

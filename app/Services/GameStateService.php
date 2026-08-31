@@ -47,6 +47,9 @@ class GameStateService
 
         Redis::set("game:{$game->room_code}:pending_choices", json_encode($choices));
         Redis::set("game:{$game->room_code}:current_drawer_id", $drawerId);
+        foreach ($game->players as $p) {
+            Redis::del("game:{$game->room_code}:clue_used_this_round:{$p->id}");
+        }
         Redis::del("game:{$game->room_code}:current_word");
         Redis::incr("game:{$game->room_code}:round_token");
         Redis::del("game:{$game->room_code}:correct_guessers");
@@ -141,22 +144,18 @@ class GameStateService
             event(new \App\Events\GameEnded($game->room_code));
         }
 
-        public function calculatePoints(string $roomCode): int
+        public function calculatePoints(string $roomCode, int $playerId): int
         {
             $endsAt = (int) Redis::get("game:{$roomCode}:round_ends_at");
             $startedAt = $endsAt - self::ROUND_SECONDS;
             $elapsed = max(0, now()->timestamp - $startedAt);
+            $points = max(10, 100 - $elapsed);
 
-            return max(10, 100 - $elapsed);
-        }
+            $cluesUsed = (int) Redis::get("game:{$roomCode}:clues_used:{$playerId}");
+            if ($cluesUsed > 0) {
+                $points = min($points, 50);
+            }
 
-        public function addScore(string $roomCode, int $playerId, int $points): void
-        {
-            Redis::hincrby("game:{$roomCode}:scores", $playerId, $points);
+            return $points;
         }
-
-        public function getScores(string $roomCode): array
-        {
-            return Redis::hgetall("game:{$roomCode}:scores");
-        }
-        }
+}

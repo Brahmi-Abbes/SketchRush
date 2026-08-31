@@ -1,9 +1,10 @@
 <x-layout title="Game — {{ $game->room_code }}">
     <span id="round-timer" class="text-lg font-mono"></span>
     <div id="game-app"
-         data-room-code="{{ $game->room_code }}"
-         data-is-drawer="{{ $isDrawer ? '1' : '0' }}"
-         class="bg-gray-800 p-6 rounded-lg shadow-lg w-full max-w-2xl space-y-4">
+        data-room-code="{{ $game->room_code }}"
+        data-is-drawer="{{ $isDrawer ? '1' : '0' }}"
+        data-player-id="{{ auth('players')->id() }}"
+        class="bg-gray-800 p-6 rounded-lg shadow-lg w-full max-w-2xl space-y-4">
 
         <div class="flex justify-between items-center">
             <h1 class="text-xl font-bold">Room: {{ $game->room_code }}</h1>
@@ -32,6 +33,11 @@
                 <input id="guess-input" type="text" autocomplete="off" placeholder="Type your guess..."
                     class="flex-1 bg-gray-700 rounded px-3 py-2 text-sm" />
                 <button type="submit" class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded text-sm">Guess</button>
+                @if(!$isDrawer)
+                    <button id="clue-btn" class="bg-purple-600 hover:bg-purple-700 px-3 py-2 rounded text-sm">
+                        Use Clue (<span id="clues-remaining">3</span> left)
+                    </button>
+                @endif
             </form>
         @endif
 
