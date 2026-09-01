@@ -14,6 +14,7 @@ class GamePlayer extends Authenticatable
         'final_score',
         'turns_taken',
         'clues_used',
+        'streak',
     ];
 
     public function game()

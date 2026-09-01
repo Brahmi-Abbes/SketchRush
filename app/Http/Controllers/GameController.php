@@ -110,6 +110,8 @@ class GameController extends Controller
         if (strcasecmp($guess, $word) === 0) {
             Redis::sadd("game:{$game->room_code}:correct_guessers", $player->id);
 
+            $player->increment('streak');
+            
             $points = $stateService->calculatePoints($game->room_code, $player->id);            $stateService->addScore($game->room_code, $player->id, $points);
 
             event(new PlayerGuessedCorrectly($game->room_code, $player->guest_name, $points));

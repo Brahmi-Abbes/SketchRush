@@ -95,6 +95,16 @@ class GameStateService
                 return;
             }
 
+            $game = Game::where('room_code', $roomCode)->firstOrFail();
+            $correctIds = Redis::smembers("game:{$roomCode}:correct_guessers");
+            $drawerId = Redis::get("game:{$roomCode}:current_drawer_id");
+
+            foreach ($game->players as $p) {
+                if ($p->id != $drawerId && !in_array((string) $p->id, $correctIds)) {
+                    $p->update(['streak' => 0]);
+                }
+            }
+
             Redis::del("game:{$roomCode}:current_word");
             Redis::del("game:{$roomCode}:current_drawer_id");
             Redis::del("game:{$roomCode}:round_ends_at");
@@ -147,18 +157,20 @@ class GameStateService
             $this->cleanupGameKeys($game->room_code);
         }
 
-        public function calculatePoints(string $roomCode, int $playerId): int
+        public function calculatePoints(string $roomCode, int $playerId, int $streak): int
         {
             $endsAt = (int) Redis::get("game:{$roomCode}:round_ends_at");
             $startedAt = $endsAt - self::ROUND_SECONDS;
             $elapsed = max(0, now()->timestamp - $startedAt);
             $points = max(10, 100 - $elapsed);
 
-            $usedClueThisRound = Redis::exists("game:{$roomCode}:clue_used_this_round:{$playerId}");            if ($usedClueThisRound) {
+            $usedClue = Redis::sismember("game:{$roomCode}:clue_used_this_round:{$playerId}", $roomCode);
+            if ($usedClue) {
                 $points = min($points, 50);
             }
 
-            return $points;
+            $multiplier = 1 + min($streak, 5) * 0.1; // cap at +50% (streak of 5+)
+            return (int) round($points * $multiplier);
         }
 
         public function addScore(string $roomCode, int $playerId, int $points): void

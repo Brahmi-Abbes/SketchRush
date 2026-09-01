@@ -43,6 +43,10 @@ window.Echo.channel('room.' + roomCode)
     })
     .listen('PlayerGuessedCorrectly', (e) => {
         appendMessage(`${e.playerName} guessed the word! (+${e.points})`, 'text-green-400 font-bold');
+    })
+    .listen('PlayerGuessedCorrectly', (e) => {
+        const streakText = e.streak > 1 ? ` 🔥${e.streak}` : '';
+        appendMessage(`${e.playerName} guessed the word! (+${e.points})${streakText}`, 'text-green-400 font-bold');
     });
 
 function appendMessage(text, className = '') {
