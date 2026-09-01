@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Redis;
 class GameStateService
 {
     private const ROUND_SECONDS = 80;
+    public const MAX_CLUES = 3;
 
     public function startGame(Game $game): void
     {
@@ -142,6 +143,8 @@ class GameStateService
 
             $game->update(['status' => 'finished']);
             event(new \App\Events\GameEnded($game->room_code));
+
+            $this->cleanupGameKeys($game->room_code);
         }
 
         public function calculatePoints(string $roomCode, int $playerId): int
@@ -151,8 +154,7 @@ class GameStateService
             $elapsed = max(0, now()->timestamp - $startedAt);
             $points = max(10, 100 - $elapsed);
 
-            $usedClueThisRound = Redis::sismember("game:{$roomCode}:clue_used_this_round:{$playerId}", $roomCode);
-            if ($usedClueThisRound) {
+            $usedClueThisRound = Redis::exists("game:{$roomCode}:clue_used_this_round:{$playerId}");            if ($usedClueThisRound) {
                 $points = min($points, 50);
             }
 
@@ -167,5 +169,17 @@ class GameStateService
         public function getScores(string $roomCode): array
         {
             return Redis::hgetall("game:{$roomCode}:scores");
+        }
+
+        private function cleanupGameKeys(string $roomCode): void
+        {
+            Redis::del(
+                "game:{$roomCode}:turn_order",
+                "game:{$roomCode}:turn_index",
+                "game:{$roomCode}:round",
+                "game:{$roomCode}:round_token",
+                "game:{$roomCode}:scores",
+                "game:{$roomCode}:correct_guessers",
+            );
         }
 }

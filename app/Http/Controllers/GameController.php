@@ -39,7 +39,7 @@ class GameController extends Controller
             'game' => $game,
             'isDrawer' => $isDrawer,
             'pendingChoices' => $pendingChoices,
-            'cluesRemaining' => 3 - $player->clues_used,
+            'cluesRemaining' => GameStateService::MAX_CLUES - $player->clues_used,
         ]);
     }
 
@@ -89,8 +89,7 @@ class GameController extends Controller
         return response()->noContent();
     }
     
-    public function guess(Request $request, string $code)
-    {
+    public function guess(Request $request, string $code, GameStateService $stateService)    {
         $game = Game::where('room_code', $code)->firstOrFail();
         $player = auth('players')->user();
         abort_unless($player, 403);
@@ -111,14 +110,14 @@ class GameController extends Controller
         if (strcasecmp($guess, $word) === 0) {
             Redis::sadd("game:{$game->room_code}:correct_guessers", $player->id);
 
-            $points = app(GameStateService::class)->calculatePoints($game->room_code, $player->id);            app(GameStateService::class)->addScore($game->room_code, $player->id, $points);
+            $points = $stateService->calculatePoints($game->room_code, $player->id);            $stateService->addScore($game->room_code, $player->id, $points);
 
             event(new PlayerGuessedCorrectly($game->room_code, $player->guest_name, $points));
 
             $totalGuessers = $game->players()->count() - 1;
             $correctCount = Redis::scard("game:{$game->room_code}:correct_guessers");
             if ($totalGuessers > 0 && $correctCount >= $totalGuessers) {
-                app(GameStateService::class)->endRound(
+                $stateService->endRound(
                     $game->room_code,
                     (int) Redis::get("game:{$game->room_code}:round_token"),
                     'all_guessed'
@@ -140,7 +139,7 @@ class GameController extends Controller
         $drawerId = Redis::get("game:{$game->room_code}:current_drawer_id");
         abort_if((string) $drawerId === (string) $player->id, 403, 'The drawer cannot use clues');
 
-        abort_if($player->clues_used >= 3, 422, 'No clues remaining');
+        abort_if($player->clues_used >= GameStateService::MAX_CLUES, 422, 'No clues remaining');
 
         if (Redis::sismember("game:{$game->room_code}:correct_guessers", $player->id)) {
             abort(422, 'You already guessed correctly');
@@ -150,14 +149,13 @@ class GameController extends Controller
         abort_unless($word, 409, 'No word is being drawn right now');
 
         $player->increment('clues_used');
-        Redis::sadd("game:{$game->room_code}:clue_used_this_round:" . $player->id, $game->room_code);
-
+        Redis::set("game:{$game->room_code}:clue_used_this_round:{$player->id}", 1);
         $wordLength = mb_strlen($word);
         $maxRevealable = max(1, $wordLength - 1); // never reveal the very last letter
         $revealedLetters = min($player->clues_used, $maxRevealable);
         $hint = strtoupper(mb_substr($word, 0, $revealedLetters)) . str_repeat('_', $wordLength - $revealedLetters);
 
-        event(new ClueRevealed($player->id, $hint, 3 - $player->clues_used));
+        event(new ClueRevealed($player->id, $hint, GameStateService::MAX_CLUES - $player->clues_used));
         
         return response()->noContent();
     }
