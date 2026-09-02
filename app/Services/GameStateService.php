@@ -164,8 +164,7 @@ class GameStateService
             $elapsed = max(0, now()->timestamp - $startedAt);
             $points = max(10, 100 - $elapsed);
 
-            $usedClue = Redis::sismember("game:{$roomCode}:clue_used_this_round:{$playerId}", $roomCode);
-            if ($usedClue) {
+            $usedClue = Redis::exists("game:{$roomCode}:clue_used_this_round:{$playerId}");            if ($usedClue) {
                 $points = min($points, 50);
             }
 

@@ -111,11 +111,10 @@ class GameController extends Controller
             Redis::sadd("game:{$game->room_code}:correct_guessers", $player->id);
 
             $player->increment('streak');
-            
-            $points = $stateService->calculatePoints($game->room_code, $player->id);            $stateService->addScore($game->room_code, $player->id, $points);
 
-            event(new PlayerGuessedCorrectly($game->room_code, $player->guest_name, $points));
-
+            $points = $stateService->calculatePoints($game->room_code, $player->id, $player->streak);
+            $stateService->addScore($game->room_code, $player->id, $points);
+            event(new PlayerGuessedCorrectly($game->room_code, $player->guest_name, $points, $player->streak));
             $totalGuessers = $game->players()->count() - 1;
             $correctCount = Redis::scard("game:{$game->room_code}:correct_guessers");
             if ($totalGuessers > 0 && $correctCount >= $totalGuessers) {

@@ -12,17 +12,15 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('game_players', function (Blueprint $table) {
-            //
+            $table->unsignedTinyInteger('streak')->default(0);
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::table('game_players', function (Blueprint $table) {
-            //
+            $table->dropColumn('streak');
         });
     }
+    
 };
