@@ -21,6 +21,14 @@ class GameController extends Controller
 
         $player = auth('players')->user();
         if (! $player) {
+            if ($game->status === 'finished') {
+                $leaderboard = $game->players()->orderByDesc('final_score')->get();
+
+                return view('game-over', [
+                    'game' => $game,
+                    'leaderboard' => $leaderboard,
+                ]);
+            }
             return redirect()->route('home');
         }
 
@@ -55,8 +63,6 @@ class GameController extends Controller
     {
         $game = Game::where('room_code', $code)->firstOrFail();
         $player = auth('players')->user();
-
-        
         abort_unless($player, 403);
 
         $drawerId = Redis::get("game:{$game->room_code}:current_drawer_id");
@@ -77,8 +83,6 @@ class GameController extends Controller
     {
         $game = Game::where('room_code', $code)->firstOrFail();
         $player = auth('players')->user();
-
-        
         abort_unless($player, 403);
 
         $drawerId = Redis::get("game:{$game->room_code}:current_drawer_id");
@@ -89,7 +93,8 @@ class GameController extends Controller
         return response()->noContent();
     }
     
-    public function guess(Request $request, string $code, GameStateService $stateService)    {
+    public function guess(Request $request, string $code, GameStateService $stateService)
+    {
         $game = Game::where('room_code', $code)->firstOrFail();
         $player = auth('players')->user();
         abort_unless($player, 403);
