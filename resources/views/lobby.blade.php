@@ -1,37 +1,43 @@
 @vite(['resources/js/lobby.js'])
 
 <x-layout title="Lobby — {{ $game->room_code }}">
-    <div id="lobby-app" data-room-code="{{ $game->room_code }}">
-        <div class="bg-gray-800 p-8 rounded-lg shadow-lg w-full max-w-md space-y-6">
+    <div id="lobby-app" data-room-code="{{ $game->room_code }}" class="w-full max-w-md">
+        <div class="bg-panel rounded-2xl p-8 space-y-6">
             <div class="text-center">
-                <p class="text-gray-400 text-sm">Room Code</p>
-                <h1 class="text-4xl font-bold tracking-widest">{{ $game->room_code }}</h1>
+                <p class="text-sm text-chalk/50 mb-2">Room code</p>
+                <div class="inline-block border-4 border-dashed border-coral rounded-2xl px-6 py-3 -rotate-1">
+                    <h1 class="font-display text-4xl tracking-[0.2em]">{{ $game->room_code }}</h1>
+                </div>
+                <button onclick="navigator.clipboard.writeText('{{ $game->room_code }}')"
+                        class="block mx-auto mt-3 text-sm text-teal hover:text-teal-dark">
+                    Copy code
+                </button>
             </div>
 
-            <button onclick="navigator.clipboard.writeText('{{ $game->room_code }}')"
-                    class="text-xs text-blue-400 hover:text-blue-300 block mx-auto mt-1">
-                Copy code
-            </button>
-
             <div>
-                <h2 class="text-lg font-semibold mb-2">Players</h2>
-                <ul id="players-list" class="space-y-1">
+                <h2 class="text-sm text-chalk/50 mb-3">{{ $game->players->count() }} in the room</h2>
+                <ul id="players-list" class="space-y-2">
                     @foreach($game->players as $player)
-                        <li class="bg-gray-700 px-3 py-2 rounded">{{ $player->guest_name }}</li>
+                        <li class="flex items-center gap-3 bg-ink px-3 py-2.5 rounded-lg">
+                            <span class="w-8 h-8 rounded-full bg-teal flex items-center justify-center text-ink font-semibold text-sm shrink-0">
+                                {{ strtoupper(substr($player->guest_name, 0, 1)) }}
+                            </span>
+                            <span>{{ $player->guest_name }}</span>
+                        </li>
                     @endforeach
                 </ul>
             </div>
 
-            @if((string) $game->host_session_id === (string) auth('players')->id())                <button id="start-btn"
+            @if((string) $game->host_session_id === (string) auth('players')->id())
+                <button id="start-btn"
                         disabled
-                        class="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-600 disabled:cursor-not-allowed py-2 rounded font-semibold">
-                    Start Game
+                        class="w-full bg-coral hover:bg-coral-dark disabled:bg-white/10 text-ink disabled:text-chalk/30 disabled:cursor-not-allowed transition-colors py-2.5 rounded-lg font-semibold">
+                    Start game
                 </button>
-                <p id="start-hint" class="text-sm text-gray-400 text-center">Need at least 2 players</p>
+                <p id="start-hint" class="text-sm text-chalk/40 text-center">Need at least 2 players to start</p>
             @else
-                <p class="text-center text-gray-400">Waiting for host to start...</p>
+                <p class="text-center text-chalk/50">Waiting for the host to start...</p>
             @endif
         </div>
     </div>
-    
 </x-layout>

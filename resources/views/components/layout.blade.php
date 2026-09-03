@@ -7,7 +7,7 @@
     <title>{{ $title ?? 'SketchRush' }}</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="bg-gray-900 text-white min-h-screen flex items-center justify-center">
+<body class="bg-ink text-chalk font-sans min-h-screen flex items-center justify-center px-4">
     {{ $slot }}
 </body>
 </html>

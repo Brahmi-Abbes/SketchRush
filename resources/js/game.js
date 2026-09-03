@@ -12,13 +12,17 @@ let timerInterval = null;
 function startCountdown(endsAt) {
     clearInterval(timerInterval);
     const timerEl = document.getElementById('round-timer');
+    const ring = document.getElementById('timer-ring');
+    const circumference = 150.8;
+    const totalSeconds = Math.max(1, endsAt - Math.floor(Date.now() / 1000));
     timerInterval = setInterval(() => {
         const secondsLeft = Math.max(0, endsAt - Math.floor(Date.now() / 1000));
-        timerEl.textContent = secondsLeft + 's';
+        timerEl.textContent = secondsLeft;
+        ring.style.strokeDashoffset = String(circumference * (1 - secondsLeft / totalSeconds));
         if (secondsLeft <= 0) clearInterval(timerInterval);
     }, 250);
 }
-// Room-wide events — everyone hears these
+
 window.Echo.channel('room.' + roomCode)
     .listen('TurnAwaitingWord', (e) => {
         statusText.textContent = e.drawerName + ' is picking a word...';
@@ -35,18 +39,15 @@ window.Echo.channel('room.' + roomCode)
         clearInterval(timerInterval);
         document.getElementById('round-timer').textContent = '';
         const label = e.reason === 'all_guessed' ? 'Everyone guessed it!' : "Time's up!";
-        appendMessage(`${label} The word was "${e.word}".`, 'text-yellow-400 font-bold');
+        appendMessage(`${label} The word was "${e.word}".`, 'text-gold font-bold');
         setTimeout(() => window.location.reload(), 4500);
     })
     .listen('GameEnded', () => {
         statusText.textContent = 'Game over!';
     })
     .listen('PlayerGuessedCorrectly', (e) => {
-        appendMessage(`${e.playerName} guessed the word! (+${e.points})`, 'text-green-400 font-bold');
-    })
-    .listen('PlayerGuessedCorrectly', (e) => {
         const streakText = e.streak > 1 ? ` 🔥${e.streak}` : '';
-        appendMessage(`${e.playerName} guessed the word! (+${e.points})${streakText}`, 'text-green-400 font-bold');
+        appendMessage(`${e.playerName} guessed the word! (+${e.points})${streakText}`, 'text-gold font-bold');
     });
 
 function appendMessage(text, className = '') {
@@ -75,8 +76,9 @@ if (guessForm) {
             },
             body: JSON.stringify({ guess }),
         }).finally(() => {
-            input.value = '';
             input.disabled = false;
+            input.value = '';
+            input.focus();
         });
     });
 }
@@ -123,6 +125,6 @@ document.getElementById('clue-btn')?.addEventListener('click', () => {
 
 window.Echo.private('player.' + playerId)
     .listen('ClueRevealed', (e) => {
-        appendMessage(`Clue: ${e.hint}`, 'text-purple-400 font-bold');
+        appendMessage(`Clue: ${e.hint}`, 'text-teal font-bold');
         document.getElementById('clues-remaining').textContent = e.cluesRemaining;
     });

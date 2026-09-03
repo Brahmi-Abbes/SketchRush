@@ -43,11 +43,14 @@ class GameController extends Controller
             $pendingChoices = json_decode(Redis::get("game:{$game->room_code}:pending_choices"), true);
         }
 
+        $cluesRemaining = max(0, GameStateService::MAX_CLUES - $player->clues_used);
+
         return view('game', [
             'game' => $game,
             'isDrawer' => $isDrawer,
             'pendingChoices' => $pendingChoices,
-            'cluesRemaining' => GameStateService::MAX_CLUES - $player->clues_used,
+            'cluesRemaining' => $cluesRemaining,
+            'streak' => $player->streak,
         ]);
     }
 
