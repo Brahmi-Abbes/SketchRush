@@ -48,6 +48,18 @@ window.Echo.channel('room.' + roomCode)
     .listen('PlayerGuessedCorrectly', (e) => {
         const streakText = e.streak > 1 ? ` 🔥${e.streak}` : '';
         appendMessage(`${e.playerName} guessed the word! (+${e.points})${streakText}`, 'text-gold font-bold');
+
+        const scoreEl = document.getElementById('score-' + e.playerId);
+        if (scoreEl) {
+            scoreEl.textContent = parseInt(scoreEl.textContent, 10) + e.points;
+        }
+
+        if (e.playerId === Number(playerId)) {
+            const badge = document.getElementById('streak-badge');
+            const countEl = document.getElementById('streak-count');
+            countEl.textContent = e.streak;
+            badge.classList.toggle('hidden', e.streak <= 1);
+        }
     });
 
 function appendMessage(text, className = '') {

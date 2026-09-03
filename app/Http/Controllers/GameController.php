@@ -19,16 +19,17 @@ class GameController extends Controller
     {
         $game = Game::where('room_code', $code)->with('players')->firstOrFail();
 
+        if ($game->status === 'finished') {
+            $leaderboard = $game->players()->orderByDesc('final_score')->get();
+
+            return view('game-over', [
+                'game' => $game,
+                'leaderboard' => $leaderboard,
+            ]);
+        }
+
         $player = auth('players')->user();
         if (! $player) {
-            if ($game->status === 'finished') {
-                $leaderboard = $game->players()->orderByDesc('final_score')->get();
-
-                return view('game-over', [
-                    'game' => $game,
-                    'leaderboard' => $leaderboard,
-                ]);
-            }
             return redirect()->route('home');
         }
 
@@ -44,6 +45,7 @@ class GameController extends Controller
         }
 
         $cluesRemaining = max(0, GameStateService::MAX_CLUES - $player->clues_used);
+        $scores = $stateService->getScores($game->room_code);
 
         return view('game', [
             'game' => $game,
@@ -51,6 +53,7 @@ class GameController extends Controller
             'pendingChoices' => $pendingChoices,
             'cluesRemaining' => $cluesRemaining,
             'streak' => $player->streak,
+            'scores' => $scores,
         ]);
     }
 
@@ -122,7 +125,7 @@ class GameController extends Controller
 
             $points = $stateService->calculatePoints($game->room_code, $player->id, $player->streak);
             $stateService->addScore($game->room_code, $player->id, $points);
-            event(new PlayerGuessedCorrectly($game->room_code, $player->guest_name, $points, $player->streak));
+            event(new PlayerGuessedCorrectly($game->room_code, $player->id, $player->guest_name, $points, $player->streak));
             $totalGuessers = $game->players()->count() - 1;
             $correctCount = Redis::scard("game:{$game->room_code}:correct_guessers");
             if ($totalGuessers > 0 && $correctCount >= $totalGuessers) {

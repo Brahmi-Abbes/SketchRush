@@ -12,13 +12,15 @@ class PlayerGuessedCorrectly implements ShouldBroadcast
     use Dispatchable, SerializesModels;
 
     public string $roomCode;
+    public int $playerId;
     public string $playerName;
     public int $points;
     public int $streak;
 
-    public function __construct(string $roomCode, string $playerName, int $points, int $streak)
+    public function __construct(string $roomCode, int $playerId, string $playerName, int $points, int $streak)
     {
         $this->roomCode = $roomCode;
+        $this->playerId = $playerId;
         $this->playerName = $playerName;
         $this->points = $points;
         $this->streak = $streak;

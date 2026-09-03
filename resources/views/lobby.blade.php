@@ -8,9 +8,13 @@
                 <div class="inline-block border-4 border-dashed border-coral rounded-2xl px-6 py-3 -rotate-1">
                     <h1 class="font-display text-4xl tracking-[0.2em]">{{ $game->room_code }}</h1>
                 </div>
-                <button onclick="navigator.clipboard.writeText('{{ $game->room_code }}')"
-                        class="block mx-auto mt-3 text-sm text-teal hover:text-teal-dark">
-                    Copy code
+                <button id="copy-code-btn" data-code="{{ $game->room_code }}"
+                        class="flex items-center gap-1.5 mx-auto mt-3 text-sm text-teal hover:text-teal-dark border border-teal/30 hover:border-teal rounded-full px-3 py-1.5 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4">
+                        <rect x="9" y="9" width="11" height="11" rx="2" />
+                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                    </svg>
+                    <span id="copy-code-label">Copy code</span>
                 </button>
             </div>
 
@@ -31,7 +35,7 @@
             @if((string) $game->host_session_id === (string) auth('players')->id())
                 <button id="start-btn"
                         disabled
-                        class="w-full bg-coral hover:bg-coral-dark disabled:bg-white/10 text-ink disabled:text-chalk/30 disabled:cursor-not-allowed transition-colors py-2.5 rounded-lg font-semibold">
+                        class="w-full bg-coral hover:bg-coral-dark disabled:bg-white/10 text-ink disabled:text-chalk/50 disabled:cursor-not-allowed transition-colors py-2.5 rounded-lg font-semibold">
                     Start game
                 </button>
                 <p id="start-hint" class="text-sm text-chalk/40 text-center">Need at least 2 players to start</p>

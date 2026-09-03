@@ -4,6 +4,15 @@ const roomCode = document.getElementById('lobby-app').dataset.roomCode;
 const list = document.getElementById('players-list');
 const startBtn = document.getElementById('start-btn');
 const startHint = document.getElementById('start-hint');
+const copyBtn = document.getElementById('copy-code-btn');
+copyBtn?.addEventListener('click', () => {
+    navigator.clipboard.writeText(copyBtn.dataset.code).then(() => {
+        const label = document.getElementById('copy-code-label');
+        const original = label.textContent;
+        label.textContent = 'Copied!';
+        setTimeout(() => { label.textContent = original; }, 1500);
+    });
+});
 
 function renderPlayer(user) {
     const li = document.createElement('li');

@@ -20,9 +20,18 @@
                 </div>
             </div>
         </div>
-        @if(!$isDrawer && $streak > 1)
-            <div class="text-gold text-sm font-semibold">🔥 {{ $streak }} in a row</div>
-        @endif
+        <div id="streak-badge" class="text-gold text-sm font-semibold {{ (!$isDrawer && $streak > 1) ? '' : 'hidden' }}">
+            🔥 <span id="streak-count">{{ $streak }}</span> in a row
+        </div>
+
+        <div id="scoreboard" class="flex flex-wrap gap-2 text-sm">
+            @foreach($game->players as $p)
+                <div class="flex items-center gap-1.5 bg-ink px-2.5 py-1 rounded-full">
+                    <span class="text-chalk/70">{{ $p->guest_name }}</span>
+                    <span id="score-{{ $p->id }}" class="font-display text-gold">{{ $scores[$p->id] ?? 0 }}</span>
+                </div>
+            @endforeach
+        </div>
 
         @if($isDrawer && $pendingChoices)
             <div id="word-choices" class="space-y-2">
