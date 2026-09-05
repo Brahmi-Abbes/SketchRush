@@ -54,4 +54,19 @@ class RoomController extends Controller
 
         return redirect()->route('rooms.show', ['code' => $game->room_code]);
     }
+    public function start(Request $request, string $code)
+    {
+        $game = Game::where('room_code', $code)->firstOrFail();
+
+        $player = auth('players')->user();
+        abort_unless($player, 403);
+        abort_unless((string) $game->host_session_id === (string) $player->id, 403);
+        abort_if($game->players()->count() < 2, 422, 'Need at least 2 players to start');
+
+        $game->update(['status' => 'playing']);
+
+        event(new GameStarted($game->room_code));
+
+        return response()->noContent();
+    }
 }
