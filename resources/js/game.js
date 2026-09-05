@@ -128,11 +128,13 @@ if (isDrawer) {
     });
 }
 
-document.getElementById('clue-btn')?.addEventListener('click', () => {
+document.getElementById('clue-btn')?.addEventListener('click', function handleClue() {
+    if (this.disabled) return;
+    this.disabled = true;
     fetch(`/rooms/${roomCode}/clue`, {
         method: 'POST',
         headers: { 'X-CSRF-TOKEN': csrfToken },
-    });
+    }).finally(() => { this.disabled = false; });
 });
 
 window.Echo.private('player.' + playerId)

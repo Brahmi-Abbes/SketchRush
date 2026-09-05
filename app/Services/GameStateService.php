@@ -73,7 +73,8 @@ class GameStateService
         EndRound::dispatch($game->room_code, $token)->delay(now()->addSeconds(self::ROUND_SECONDS));
         Redis::del("game:{$game->room_code}:pending_choices");
 
-        event(new RoundStarted($game->room_code, $player->guest_name, $endsAt));    }
+        event(new RoundStarted($game->room_code, $player->guest_name, $endsAt));
+    }
 
     public function endRound(string $roomCode, int $token, string $reason): void
     {
@@ -161,8 +162,7 @@ class GameStateService
             $points = min($points, 50);
         }
 
-        $multiplier = 1 + min($streak, 5) * 0.1; // cap at +50% (streak of 5+)
-        return (int) round($points * $multiplier);
+        $multiplier = $streak > 1 ? 1 + min($streak, 5) * 0.1 : 1;        return (int) round($points * $multiplier);
     }
 
     public function addScore(string $roomCode, int $playerId, int $points): void

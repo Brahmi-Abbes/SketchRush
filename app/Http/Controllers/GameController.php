@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\Game;
 use App\Services\GameStateService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
 use App\Events\StrokeDrawn;
 use App\Events\CanvasCleared;
