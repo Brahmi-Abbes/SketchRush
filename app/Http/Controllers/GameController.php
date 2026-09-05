@@ -141,7 +141,7 @@ class GameController extends Controller
         return response()->noContent();
     }
 
-    public function requestClue(Request $request, string $code)
+    public function requestClue(Request $request, string $code, GameStateService $stateService)
     {
         $game = Game::where('room_code', $code)->firstOrFail();
         $player = auth('players')->user();
@@ -160,12 +160,7 @@ class GameController extends Controller
         abort_unless($word, 409, 'No word is being drawn right now');
 
         $player->increment('clues_used');
-        Redis::set("game:{$game->room_code}:clue_used_this_round:{$player->id}", 1);
-        $wordLength = mb_strlen($word);
-        $maxRevealable = max(1, $wordLength - 1); // never reveal the very last letter
-        $revealedLetters = min($player->clues_used, $maxRevealable);
-        $hint = strtoupper(mb_substr($word, 0, $revealedLetters)) . str_repeat('_', $wordLength - $revealedLetters);
-
+        $hint = $stateService->buildHint($word, $player->clues_used);
         event(new ClueRevealed($player->id, $hint, GameStateService::MAX_CLUES - $player->clues_used));
         
         return response()->noContent();

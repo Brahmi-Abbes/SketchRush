@@ -60,6 +60,9 @@ window.Echo.channel('room.' + roomCode)
             countEl.textContent = e.streak;
             badge.classList.toggle('hidden', e.streak <= 1);
         }
+    })
+    .listen('LetterAutoRevealed', (e) => {
+        appendMessage(`New clue: ${e.hint}`, 'text-teal font-bold');
     });
 
 function appendMessage(text, className = '') {

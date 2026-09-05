@@ -5,7 +5,9 @@ namespace App\Services;
 use App\Events\RoundStarted;
 use App\Events\RoundEnded;
 use App\Events\TurnAwaitingWord;
+use App\Events\LetterAutoRevealed;
 use App\Jobs\EndRound;
+use App\Jobs\AutoRevealLetter;
 use App\Models\Game;
 use App\Models\GamePlayer;
 use Illuminate\Support\Facades\Redis;
@@ -71,6 +73,14 @@ class GameStateService
         $token = (int) Redis::get("game:{$game->room_code}:round_token");
 
         EndRound::dispatch($game->room_code, $token)->delay(now()->addSeconds(self::ROUND_SECONDS));
+
+        Redis::set("game:{$game->room_code}:auto_reveal_count", 0);
+
+        AutoRevealLetter::dispatch($game->room_code, $token)
+            ->delay(now()->addSeconds((int) (self::ROUND_SECONDS * 0.4)));
+
+        AutoRevealLetter::dispatch($game->room_code, $token)
+            ->delay(now()->addSeconds((int) (self::ROUND_SECONDS * 0.7)));
         Redis::del("game:{$game->room_code}:pending_choices");
 
         event(new RoundStarted($game->room_code, $player->guest_name, $endsAt));
@@ -162,7 +172,8 @@ class GameStateService
             $points = min($points, 50);
         }
 
-        $multiplier = $streak > 1 ? 1 + min($streak, 5) * 0.1 : 1;        return (int) round($points * $multiplier);
+        $multiplier = $streak > 1 ? 1 + min($streak, 5) * 0.1 : 1;
+        return (int) round($points * $multiplier);
     }
 
     public function addScore(string $roomCode, int $playerId, int $points): void
@@ -189,5 +200,32 @@ class GameStateService
         foreach ($playerIds as $id) {
             Redis::del("game:{$roomCode}:clue_used_this_round:{$id}");
         }
+    }
+
+    public function buildHint(string $word, int $revealCount): string
+    {
+        $wordLength = mb_strlen($word);
+        $maxRevealable = max(1, $wordLength - 1); // never reveal the very last letter
+        $revealCount = min($revealCount, $maxRevealable);
+
+        return strtoupper(mb_substr($word, 0, $revealCount)) . str_repeat('_', $wordLength - $revealCount);
+    }
+
+    public function autoRevealLetter(string $roomCode, int $token): void
+    {
+        $currentToken = (int) Redis::get("game:{$roomCode}:round_token");
+        if ($token !== $currentToken) {
+            return; // stale — same guard EndRound uses, this round already ended or moved on
+        }
+
+        $word = Redis::get("game:{$roomCode}:current_word");
+        if (!$word) {
+            return;
+        }
+
+        $count = (int) Redis::incr("game:{$roomCode}:auto_reveal_count");
+        $hint = $this->buildHint($word, $count);
+
+        event(new LetterAutoRevealed($roomCode, $hint));
     }
 }
