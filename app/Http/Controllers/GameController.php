@@ -160,6 +160,7 @@ class GameController extends Controller
         abort_unless($word, 409, 'No word is being drawn right now');
 
         $player->increment('clues_used');
+        Redis::set("game:{$game->room_code}:clue_used_this_round:{$player->id}", 1); // ← add this
         $hint = $stateService->buildHint($word, $player->clues_used);
         event(new ClueRevealed($player->id, $hint, GameStateService::MAX_CLUES - $player->clues_used));
         
