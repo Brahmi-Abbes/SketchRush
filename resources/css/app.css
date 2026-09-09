@@ -17,4 +17,24 @@
     --color-teal: #2bb3a3;
     --color-teal-dark: #22928a;
     --color-gold: #ffc94a;
+    --color-frame: #b98d5d;
+}
+
+/* Subtle paper-grain + off-center glow, sits behind everything.
+   Kept as its own overlay div (see layout) rather than a body{} rule,
+   so it never fights Tailwind's own background utilities. */
+.bg-grain {
+    background-image:
+        radial-gradient(ellipse 60% 50% at 15% -10%, rgba(255, 107, 74, 0.12), transparent 60%),
+        radial-gradient(ellipse 55% 45% at 100% 105%, rgba(43, 179, 163, 0.10), transparent 60%),
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.045'/%3E%3C/svg%3E");
+    background-repeat: no-repeat, no-repeat, repeat;
+}
+
+/* The site's one signature shape — asymmetric corners instead of a
+   uniform rounded rectangle, plus a soft, slightly warm shadow instead
+   of a flat generic one. Used on every primary card. */
+.panel {
+    border-radius: 30px 30px 30px 8px;
+    box-shadow: 0 25px 60px -20px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.04);
 }
