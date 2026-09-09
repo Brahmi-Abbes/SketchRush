@@ -49,7 +49,7 @@ class GameStateService
         Redis::set("game:{$game->room_code}:pending_choices", json_encode($choices));
         Redis::set("game:{$game->room_code}:current_drawer_id", $drawerId);
         foreach ($game->players as $p) {
-            Redis::del("game:{$game->room_code}:clue_used_this_round:{$p->id}");
+            Redis::del("game:{$game->room_code}:clue_reveal_count:{$p->id}");
         }
         Redis::del("game:{$game->room_code}:current_word");
         Redis::incr("game:{$game->room_code}:round_token");
@@ -167,8 +167,7 @@ class GameStateService
         $elapsed = max(0, now()->timestamp - $startedAt);
         $points = max(10, 100 - $elapsed);
 
-        $usedClue = Redis::exists("game:{$roomCode}:clue_used_this_round:{$playerId}");            
-        if ($usedClue) {
+        $usedClue = Redis::exists("game:{$roomCode}:clue_reveal_count:{$playerId}");        if ($usedClue) {
             $points = min($points, 50);
         }
 
