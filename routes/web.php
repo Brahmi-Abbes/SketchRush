@@ -13,10 +13,7 @@ Route::post('/rooms/{code}/draw', [GameController::class, 'draw'])->name('rooms.
 Route::post('/rooms/{code}/clear-canvas', [GameController::class, 'clearCanvas'])->name('rooms.clear-canvas');
 Route::post('/rooms/{code}/guess', [GameController::class, 'guess'])->name('rooms.guess');
 Route::post('/rooms/{code}/clue', [GameController::class, 'requestClue'])->name('rooms.clue');
-Route::get('/rooms/{code}', function ($code) {
-    $game = \App\Models\Game::where('room_code', $code)->with('players')->firstOrFail();
-    return view('lobby', ['game' => $game]);
-})->name('rooms.show');
+Route::get('/rooms/{code}', [RoomController::class, 'show'])->name('rooms.show');
 
 Route::view('/', 'home')->name('home');
 

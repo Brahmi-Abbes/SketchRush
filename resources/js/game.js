@@ -74,6 +74,12 @@ function appendMessage(text, className = '') {
     chatLog.scrollTop = chatLog.scrollHeight;
 }
 
+function showError(message) {
+    statusText.textContent = message;
+    statusText.classList.add('text-red-400');
+    setTimeout(() => statusText.classList.remove('text-red-400'), 2000);
+}
+
 const guessForm = document.getElementById('guess-form');
 if (guessForm) {
     guessForm.addEventListener('submit', (ev) => {
@@ -90,6 +96,8 @@ if (guessForm) {
                 'X-CSRF-TOKEN': csrfToken,
             },
             body: JSON.stringify({ guess }),
+        }).then(res => {
+            if (!res.ok && res.status !== 204) showError('Something went wrong');
         }).finally(() => {
             input.disabled = false;
             input.value = '';
@@ -144,4 +152,7 @@ window.Echo.private('player.' + playerId)
     .listen('ClueRevealed', (e) => {
         appendMessage(`Clue: ${e.hint}`, 'text-teal font-bold');
         document.getElementById('clues-remaining').textContent = e.cluesRemaining;
+        if (e.cluesRemaining <= 0) {
+            document.getElementById('clue-btn').disabled = true;
+        }
     });

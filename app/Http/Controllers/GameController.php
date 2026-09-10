@@ -104,9 +104,7 @@ class GameController extends Controller
         $player = auth('players')->user();
         abort_unless($player, 403);
 
-        $drawerId = Redis::get("game:{$game->room_code}:current_drawer_id");
-        abort_if((string) $drawerId === (string) $player->id, 403, 'The drawer cannot guess');
-
+        $this->assertNotDrawer($game, $player, 'The drawer cannot guess');
         $word = Redis::get("game:{$game->room_code}:current_word");
         abort_unless($word, 409, 'No word is being drawn right now');
 
@@ -147,9 +145,7 @@ class GameController extends Controller
         $player = auth('players')->user();
         abort_unless($player, 403);
 
-        $drawerId = Redis::get("game:{$game->room_code}:current_drawer_id");
-        abort_if((string) $drawerId === (string) $player->id, 403, 'The drawer cannot use clues');
-
+        $this->assertNotDrawer($game, $player, 'The drawer cannot guess');
         abort_if($player->clues_used >= GameStateService::MAX_CLUES, 422, 'No clues remaining');
 
         if (Redis::sismember("game:{$game->room_code}:correct_guessers", $player->id)) {
@@ -160,10 +156,19 @@ class GameController extends Controller
         abort_unless($word, 409, 'No word is being drawn right now');
 
         $player->increment('clues_used');
-        $revealCount = (int) Redis::incr("game:{$game->room_code}:clue_reveal_count:{$player->id}");
+        $token = (int) Redis::get("game:{$game->room_code}:round_token");
+        $key = "game:{$game->room_code}:clue_reveal_count:{$player->id}:{$token}";
+        $revealCount = (int) Redis::incr($key);
+        Redis::expire($key, 3600); // safety net: self-cleans after 1 hour even if nothing else does
         $hint = $stateService->buildHint($word, $revealCount);
+
         event(new ClueRevealed($player->id, $hint, GameStateService::MAX_CLUES - $player->clues_used));
         
         return response()->noContent();
+    }
+    private function assertNotDrawer(Game $game, $player, string $message = 'The drawer cannot do this'): void
+    {
+        $drawerId = Redis::get("game:{$game->room_code}:current_drawer_id");
+        abort_if((string) $drawerId === (string) $player->id, 403, $message);
     }
 }

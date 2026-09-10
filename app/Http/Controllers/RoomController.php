@@ -69,4 +69,14 @@ class RoomController extends Controller
 
         return response()->noContent();
     }
+    public function show(string $code)
+    {
+        $game = Game::where('room_code', $code)->with('players')->firstOrFail();
+
+        if (! auth('players')->user()) {
+            return redirect()->route('home');
+        }
+
+        return view('lobby', ['game' => $game]);
+    }
 }

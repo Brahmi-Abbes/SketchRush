@@ -167,7 +167,9 @@ class GameStateService
         $elapsed = max(0, now()->timestamp - $startedAt);
         $points = max(10, 100 - $elapsed);
 
-        $usedClue = Redis::exists("game:{$roomCode}:clue_reveal_count:{$playerId}");        if ($usedClue) {
+        $token = (int) Redis::get("game:{$roomCode}:round_token");
+        $usedClue = Redis::exists("game:{$roomCode}:clue_reveal_count:{$playerId}:{$token}");
+        if ($usedClue) {
             $points = min($points, 50);
         }
 
@@ -195,10 +197,6 @@ class GameStateService
             "game:{$roomCode}:scores",
             "game:{$roomCode}:correct_guessers",
         );
-
-        foreach ($playerIds as $id) {
-            Redis::del("game:{$roomCode}:clue_used_this_round:{$id}");
-        }
     }
 
     public function buildHint(string $word, int $revealCount): string
