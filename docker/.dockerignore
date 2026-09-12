@@ -4,3 +4,4 @@ vendor
 .env
 storage/logs/*
 storage/framework/cache/*
+public/hot
