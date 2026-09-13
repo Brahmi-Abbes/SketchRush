@@ -18,7 +18,7 @@
             <form action="/rooms" method="POST" class="space-y-3">
                 @csrf
                 <label class="block text-sm text-chalk/60">Your name</label>
-                <input type="text" name="guest_name" placeholder="e.g. Sam" required
+                <input type="text" name="guest_name" placeholder="e.g. Mohammad" required
                        class="w-full px-4 py-2.5 rounded-lg bg-ink border border-white/10 placeholder:text-chalk/30 focus:outline-none focus:border-coral focus:ring-2 focus:ring-coral/20 transition-shadow">
                 <button type="submit"
                         class="w-full bg-coral hover:bg-coral-dark active:scale-[0.98] active:translate-y-px transition-all py-2.5 rounded-lg font-semibold text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral focus-visible:ring-offset-2 focus-visible:ring-offset-panel">
