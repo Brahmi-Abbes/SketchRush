@@ -1,58 +1,75 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# SketchRush
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+A real-time multiplayer drawing and guessing party game — inspired by Skribbl.io, but with two original mechanics: **Clues** and **Guessing Streaks**.
 
-## About Laravel
+Draw for your friends. Guess what they're drawing. Whoever's fastest wins.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## Demo
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+[▶ Watch the demo video](#) <!-- swap in your video link -->
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## Original Mechanics
 
-## Learning Laravel
+**Clues** — Each player gets a limited, lifetime pool of clue uses per game (not per round). Each clue reveals one more letter of the secret word than the last, but the very last letter is never revealed — no matter how many clues are spent. Using a clue caps that round's score.
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+**Guessing Streaks** — Consecutive correct guesses across rounds build a score multiplier. Any round without a correct guess resets it to zero. The drawer is exempt, since they never guess their own word.
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+## Core Gameplay
 
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
+- Guest-only identity — no signup, just a name
+- Create or join a room via a 6-character code
+- Live lobby with real-time presence (join/leave tracking)
+- Host-controlled game start, gated on 2+ players
+- Turn rotation through a shuffled player order
+- Drawer picks from 3 word choices spanning 3 different categories
+- Live canvas drawing, synced across every connected browser
+- Server-side guess validation — the secret word is never sent to the browser at all, not even the drawer's
+- Passive auto-revealed letters over time, in addition to manual clues
+- Server-authoritative round timer — ending a round never depends on any single browser staying open
+- Speed-based scoring, combined with the clue penalty and streak multiplier
+- Final leaderboard and "play again"
 
-## Agentic Development
+## Tech Stack
 
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+| Layer | Choice |
+|---|---|
+| Backend | Laravel 12, PHP 8.4 |
+| Real-time | Laravel Reverb (WebSockets), private + presence channels |
+| Live game state | Redis |
+| Persistent data | MySQL |
+| Frontend | Blade components, vanilla JavaScript (no framework), Tailwind CSS |
+| Drawing | HTML5 Canvas API, throttled stroke broadcasting |
+| Containerization | Docker Compose — 6 services (app, nginx, queue, reverb, mysql, redis) |
+| Testing | Pest — unit tests for scoring/hint logic, feature tests for guess correctness and room creation |
+| CI/CD | GitHub Actions — automated test run on every push, with a live Redis service container |
+
+## Architecture Notes
+
+**The server is the only source of truth for anything that matters.** The secret word, the round's end time, and whether a guess is correct are decided exclusively server-side. The browser only ever sees what it's explicitly allowed to see — word choices go out over a private, per-player WebSocket channel; the word itself never leaves Redis.
+
+**Round timing uses server-scheduled delayed jobs, not client-side timers.** Each round dispatches a delayed job scheduled to fire at the exact moment the round should end, tagged with a token that increments every turn — so a stale job from an early-ended round can detect it's obsolete and safely do nothing when it eventually fires. The same token-scoping pattern is reused for canvas stroke ordering (rejecting out-of-order strokes after a clear) and for clue letter-reveal counts (making a reset unnecessary by giving every round its own uniquely-keyed counter).
+
+**Redis and MySQL are split by lifetime.** Anything that only matters while a game is actively being played — turn order, the current word, live scores, presence — lives in Redis. Anything that needs to survive after the game ends — final scores, player records — is written to MySQL once, at game end.
+
+## Running Locally
 
 ```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
+git clone https://github.com/Brahmi-Abbes/SketchRush.git
+cd SketchRush
+cp .env.example .env
+docker compose up -d --build
+docker compose exec app php artisan key:generate
+docker compose exec app php artisan migrate
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+Visit `http://localhost:8000`.
 
-## Contributing
+## Running Tests
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+```bash
+docker compose exec app php artisan test
+```
 
-## Code of Conduct
+## Author
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
-
-## Security Vulnerabilities
-
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
-
-## License
-
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+Built by [Me ✌](https://github.com/Brahmi-Abbes)
