@@ -1,12 +1,12 @@
 # SketchRush
 
-A real-time multiplayer drawing and guessing party game — inspired by Skribbl.io, but with two original mechanics: **Clues** and **Guessing Streaks**.
+A real-time multiplayer drawing and guessing party game — inspired by Skribbl.io, but with original mechanics.
 
 Draw for your friends. Guess what they're drawing. Whoever's fastest wins.
 
 ## Demo
 
-[▶ Watch the demo video](#) <!-- swap in your video link -->
+[▶ Watch the demo video](https://youtu.be/V0XqvNsBI2A)
 
 ## Original Mechanics
 
